@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cat_Scriber</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Cat_Scriber</h1>
+      <p class="tagline">Local transcription &middot; Claude charting &middot; Emailed to you</p>
+    </header>
+
+    <form id="upload-form">
+      <label>
+        Patient name
+        <input type="text" name="patient_name" required autocomplete="off" placeholder="e.g. Jane Doe" />
+      </label>
+
+      <label>
+        Visit date
+        <input type="date" name="visit_date" value="{{ today }}" required />
+      </label>
+
+      <label>
+        Send results to
+        <input type="email" name="recipient" value="{{ default_recipient }}" required placeholder="email@example.com" />
+      </label>
+
+      <label>
+        Audio file
+        <div id="dropzone" tabindex="0">
+          <input type="file" name="audio" id="audio-input" accept="audio/*,video/*,.m4a,.mp3,.wav,.opus" required />
+          <span id="dropzone-label">Drag &amp; drop audio here, or click to choose</span>
+        </div>
+      </label>
+
+      <button type="submit" id="submit-btn">Transcribe &amp; chart</button>
+    </form>
+
+    <section id="status" hidden>
+      <h2>Status</h2>
+      <div id="stage-line"></div>
+      <progress id="progress-bar" value="0" max="1"></progress>
+      <p id="message"></p>
+      <p id="error" class="error" hidden></p>
+    </section>
+
+    <section id="results" hidden>
+      <details open>
+        <summary><strong>Chart</strong> (review before pasting into EMR)</summary>
+        <pre id="chart-text"></pre>
+      </details>
+      <details>
+        <summary><strong>Transcript</strong></summary>
+        <pre id="transcript-text"></pre>
+      </details>
+      <p class="note">Both files have also been emailed to you.</p>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
