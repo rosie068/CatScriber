@@ -1,6 +1,6 @@
-# Cat_Scriber
+# CatScriber
 
-Local web app that turns ~1hr dental visit recordings into an EMR-ready chart note, emailed to you.
+A fun side project to help my dentist sister with chart prep: a local web app that turns ~1hr dental visit recordings into an EMR-ready chart note, emailed to you.
 
 - **Audio stays on your machine.** Whisper runs locally; the audio file never leaves your computer.
 - **Chart generation uses Claude** (Anthropic API). Only the transcript text is sent.
@@ -43,23 +43,28 @@ Open `.env` and fill in:
 ./run.sh
 ```
 
-This creates a virtualenv, installs dependencies, and starts the server at <http://127.0.0.1:8000>. The first time you transcribe anything, faster-whisper will download the model (~1.5 GB for `medium`). Subsequent runs reuse the cached model.
+This creates a virtualenv, installs dependencies, and starts the server at <http://127.0.0.1:8000>. The Whisper model downloads on first run and is cached after that.
+
+Transcription backend (`WHISPER_BACKEND=auto`, the default):
+- **Apple Silicon Mac** → MLX (`mlx-whisper`, model `mlx-community/whisper-large-v3-mlx`), fast via Metal.
+- **Anything else** → faster-whisper (CTranslate2, int8 on CPU).
 
 ## Daily use
 
 1. Run `./run.sh`.
 2. Open <http://127.0.0.1:8000>.
 3. Fill in patient name, visit date, recipient email, and drop the audio file in.
-4. Wait. On an Intel Mac with the `medium` model, expect roughly **30–45 minutes per hour of audio** (CPU-bound). Apple Silicon Macs are 3–5× faster.
+4. Wait. Apple Silicon (MLX) is much faster than the CPU fallback; on an Intel Mac expect roughly **30–45 minutes per hour of audio**.
 5. When done, the chart and transcript appear in the page and arrive in the recipient's inbox.
 
 ## Tuning
 
 In `.env`:
 
-- `WHISPER_MODEL=small` — ~3× faster, slightly lower Mandarin accuracy. Good if waits are too long.
-- `WHISPER_MODEL=large-v3` — best Mandarin accuracy, but very slow on CPU (multi-hour for 1hr audio). Only use if you have a CUDA GPU.
-- `CHART_MODEL=claude-opus-4-7` — higher chart quality, more expensive than Sonnet.
+- `WHISPER_BACKEND=mlx|ctranslate2` — force a backend instead of `auto`.
+- `WHISPER_MODEL=mlx-community/whisper-large-v3-turbo` — faster distilled MLX model, slightly lower accuracy.
+- On the CPU backend, a smaller `WHISPER_MODEL` (e.g. `small`) trades Mandarin accuracy for speed.
+- `CHART_MODEL` — Claude model used for the chart (default in `.env.example`).
 - `PURGE_AFTER_SEND=false` — keep audio + transcript files in `./uploads/<job_id>/` for debugging. Default is `true`.
 
 ## Editing the chart format
@@ -84,10 +89,10 @@ The chart prompt lives in `prompts/dental_chart.md`. It's a plain Markdown file 
 ## File layout
 
 ```
-Cat_Scriber/
+CatScriber/
 ├── app/
 │   ├── main.py            FastAPI app + background pipeline
-│   ├── transcribe.py      faster-whisper wrapper
+│   ├── transcribe.py      Whisper wrapper (MLX / faster-whisper)
 │   ├── chart.py           Anthropic API call
 │   ├── email_send.py      SMTP delivery
 │   ├── jobs.py            in-memory job tracking
